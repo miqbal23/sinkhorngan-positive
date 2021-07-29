@@ -1,0 +1,130 @@
+# Global config and can be use as namespace
+root_dir: ../experiments
+dataset: Mnist
+trainer: sinkhorn_gan
+model: sn_dcgan
+optim: RMSprop
+gpu: true
+n_gpu_use: 1
+ngf: 64
+ndf: 64
+# Data input
+batch_size: 32 
+input_size:  [1, 32, 32]
+z_dim:  100
+critic_dim: 100
+n_epoch: 100000
+# Sinkhorn params
+sinkhorn_eps: 1
+sinkhorn_iter: 10
+sinkhorn_reduction: sum
+sinkhorn_p: 1
+#  lr_scheduler
+lr_scheduler: ExponentialLR
+gamma_lr_scheduler: 0.99
+# Note will be as name folder
+note: sinkhorn_gan_batch32_lr099
+# will Create root_dir/dataset/trainer/model/note
+
+---
+# Session Modules
+DataLoader:
+  modules:
+    - name: main
+      module: {{ dataset }}DataLoader
+      configs:
+        size: {{ input_size }}
+        batch_size: {{ batch_size }}
+        shuffle: true
+        sampler: ~
+        batch_sampler: ~
+        num_workers: 2  # default 4
+        collate_fn: ~
+        pin_memory: false
+        drop_last: false
+        timeout: 0
+        worker_init_fn: ~
+Model:
+  modules:
+    - name: critic
+      network:
+        module: {{ model }}.Critic
+        configs:
+          ndf: {{ ndf }}
+          z_dim: {{ z_dim }}
+          input_size: {{ input_size }}
+          critic_dim: {{ critic_dim }}
+      optim:
+        module: {{ optim }}
+        configs:
+          lr: 0.0001
+      lr_scheduler:
+        module: {{ lr_scheduler }}
+        configs:
+          gamma: {{ gamma_lr_scheduler }}
+
+    - name: generator
+      network:
+        module: {{ model }}.Generator
+        configs:
+          ngf: {{ ngf }}
+          z_dim: {{ z_dim }}
+          input_size: {{ input_size }}
+          critic_dim: {{ critic_dim }}
+      optim:
+        module: {{ optim }}
+        configs:
+          lr: 0.0001
+      lr_scheduler:
+        module: {{ lr_scheduler }}
+        configs:
+          gamma: {{ gamma_lr_scheduler }}
+Logger:
+  modules:
+    - module: Scalar
+    - module: Histogram
+Evaluator:
+  modules:
+    - module: GeneratedImage
+      configs:
+        run_per: [500, generator]
+        total_data: 64
+        z_dim: {{ z_dim }}
+#    - module: IS
+#      configs:
+#        run_per: [500, generator]
+#        total_data: 15000
+#        batch_size: 20
+#    - module: FID
+#      configs:
+#        run_per: [500, generator]
+#        total_data: 15000
+#        batch_size: 20
+Trainer:
+  configs:
+    save_model_per: [200, epoch] # can select epoch or step
+    save_log_per: [200, step] # can select epoch or step
+  updater:
+    module: sinkhorn.GAN
+    configs:
+      z_dim: {{ z_dim }}
+      fixed: false
+  modules:
+    - name: critic
+      criterion:
+        module: {{ trainer }}.Critic
+        configs:
+          eps: {{ sinkhorn_eps }}
+          n_iter: {{ sinkhorn_iter }}
+          reduction: {{ sinkhorn_reduction }}
+          p: {{ sinkhorn_p }}
+
+    - name: generator
+      criterion:
+        module: {{ trainer }}.Generator
+        configs:
+          eps: {{ sinkhorn_eps }}
+          n_iter: {{ sinkhorn_iter }}
+          reduction: {{ sinkhorn_reduction }}
+          p: {{ sinkhorn_p }}
+

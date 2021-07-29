@@ -1,0 +1,112 @@
+# Global config and can be use as namespace
+root_dir: ../experiments
+dataset: Mnist
+trainer: wgan
+model: mlp
+optim: Adam
+gpu: true
+n_gpu_use: 1
+ngf: 64
+ndf: 64
+# Data input
+batch_size:  100
+input_size:  [1, 32, 32]
+z_dim:  100
+critic_dim: 1
+n_epoch: 100000
+
+# Note will be as name folder
+note: DIV
+# will Create root_dir/dataset/trainer/model/note
+
+---
+# Session Modules
+DataLoader:
+  modules:
+    - name: main
+      module: {{ dataset }}DataLoader
+      configs:
+        size: {{ input_size }}
+        batch_size: {{ batch_size }}
+        shuffle: true
+        sampler: ~
+        batch_sampler: ~
+        num_workers: 2  # default 4
+        collate_fn: ~
+        pin_memory: false
+        drop_last: false
+        timeout: 0
+        worker_init_fn: ~
+        requires_grad: true
+Model:
+  modules:
+    - name: critic
+      network:
+        module: {{ model }}.Critic
+        configs:
+          ndf: {{ ndf }}
+          z_dim: {{ z_dim }}
+          input_size: {{ input_size }}
+          critic_dim: {{ critic_dim }}
+      optim:
+        module: {{ optim }}
+        configs:
+          lr: 0.0001
+          betas: [0.5, 0.999]
+    - name: generator
+      network:
+        module: {{ model }}.Generator
+        configs:
+          ngf: {{ ngf }}
+          z_dim: {{ z_dim }}
+          input_size: {{ input_size }}
+          critic_dim: {{ critic_dim }}
+      optim:
+        module: {{ optim }}
+        configs:
+          lr: 0.0001
+          betas: [0.5, 0.999]
+Logger:
+  modules:
+    -  module: Scalar
+Evaluator:
+  modules:
+    - module: GeneratedImage
+      configs:
+        run_per: [500, generator]
+        total_data: 64
+        z_dim: {{ z_dim }}
+#    - module: IS
+#      configs:
+#        run_per: [500, generator]
+#        total_data: 15000
+#        batch_size: 20
+#    - module: FID
+#      configs:
+#        run_per: [500, generator]
+#        total_data: 15000
+#        batch_size: 20
+Trainer:
+  configs:
+    save_model_per: [20, epoch] # can select epoch or step
+    save_log_per: [200, step] # can select epoch or step
+  updater:
+    module: {{ trainer }}.GAN
+    configs:
+      z_dim: {{ z_dim }}
+      fixed: false
+  modules:
+    - name: critic
+      criterion:
+        module: {{ trainer }}.Critic
+      regularization:
+        modules:
+            - module: WasserstainDiv
+              configs:
+                norm_power: 6
+                div_coeff: 2
+
+    - name: generator
+      criterion:
+        module: {{ trainer }}.Generator
+

@@ -1,0 +1,37 @@
+---
+dataloader:
+  type: cat
+  ars:
+    # Datasets args
+    size: [3, 64, 64]
+    # DataLoader args
+    shuffle: true,
+    sampler: ~,
+    batch_size: 100
+    batch_sampler: ~,
+    num_workers: 2,
+    collate_fn: ~,
+    pin_memory: False,
+    drop_last: False,
+    timeout: 0,
+    worker_init_fn: ~,
+    multiprocessing_context: ~
+
+---
+dataloader:
+  type: celeba
+  ars:
+    # Datasets args
+    size: [3, 32, 32]
+    # DataLoader args
+    shuffle: true,
+    sampler: ~,
+    batch_size: 100
+    batch_sampler: ~,
+    num_workers: 2,
+    collate_fn: ~,
+    pin_memory: False,
+    drop_last: False,
+    timeout: 0,
+    worker_init_fn: ~,
+    multiprocessing_context: ~

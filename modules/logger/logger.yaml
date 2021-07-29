@@ -1,0 +1,7 @@
+Logger:
+  configs:
+  modules:
+    scalar:
+      kind: Scalar
+      args:
+        pass: ~

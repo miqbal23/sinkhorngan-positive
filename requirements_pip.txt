@@ -1,0 +1,8 @@
+bunch
+tb-nightly
+tensorboardX
+jgraph
+powerlaw
+POT
+pytorch-msssim
+geomloss
